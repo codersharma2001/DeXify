@@ -4,6 +4,8 @@ import { abis } from "@my-app/contracts";
 import { ERC20, useContractFunction, useEthers, useTokenAllowance, useTokenBalance } from "@usedapp/core";
 import { ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
+import { useChainlinkPrice } from "@your-chainlink-package";
+import { CHAINLINK_ORACLE_ADDRESS, CHAINLINK_JOB_ID } from "../config";
 
 import  { getAvailableTokens, getCounterpartTokens, findPoolByTokens, isOperationPending, getFailureMessage, getSuccessMessage } from '../utils';
 import { ROUTER_ADDRESS } from "../config";
@@ -13,6 +15,7 @@ import Balance from "./Balance";
 import styles from "../styles";
 
 const Exchange = ({ pools }) => {
+  const chainlinkPrice = useChainlinkPrice(CHAINLINK_ORACLE_ADDRESS, CHAINLINK_JOB_ID);
   const { account } = useEthers();
   const [fromValue, setFromValue] = useState("0");
   const [fromToken, setFromToken] = useState(pools[0].token0Address); // initialFromToken
@@ -33,6 +36,7 @@ const Exchange = ({ pools }) => {
   const formValueIsGreaterThan0 = fromValueBigNumber.gt(parseUnits("0"));
   const hasEnoughBalance = fromValueBigNumber.lte(fromTokenBalance ?? parseUnits("0"));
 
+  
   // approve initiating a contract call (similar to use state) -> gives the state and the sender...
   const { state: swapApproveState, send: swapApproveSend } =
     useContractFunction(fromTokenContract, "approve", {
@@ -112,6 +116,13 @@ const Exchange = ({ pools }) => {
         <Balance tokenBalance={fromTokenBalance} />
       </div>
 
+      <div className="flex flex-col w-full items-center">
+      {chainlinkPrice && (
+        <p className="text-site-green">
+          Chainlink Oracle Price: {ethers.utils.formatUnits(chainlinkPrice, 18)} ETH
+        </p>
+      )}
+    </div>
       <div className="mb-8 w-[100%]">
         <AmountOut
           fromToken={fromToken}
